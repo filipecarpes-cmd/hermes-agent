@@ -20,6 +20,7 @@ import {
   captureUntrustedDmEvent,
   extractBridgeEvent,
   mediaPayloadForFile,
+  normalizePhoneForWhatsAppCheck,
   pollCreationMessageFromPayload,
   pollUpdateForAggregation,
 } from './bridge_helpers.js';
@@ -41,6 +42,13 @@ import {
   assert.equal(event.captureOnly, true);
   assert.equal(event.body, 'Tenho interesse');
   assert.deepEqual(event.mediaUrls, []);
+}
+
+// -- WhatsApp number lookup normalization ---------------------------------
+{
+  assert.equal(normalizePhoneForWhatsAppCheck('(19) 99729-9781'), '5519997299781');
+  assert.equal(normalizePhoneForWhatsAppCheck('5519997299781'), '5519997299781');
+  assert.equal(normalizePhoneForWhatsAppCheck('123'), null);
 }
 
 // -- quoted outbound text -------------------------------------------------

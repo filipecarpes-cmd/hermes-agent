@@ -45,6 +45,7 @@ import {
   extractBridgeEvent,
   inferMediaType,
   mediaPayloadForFile,
+  normalizePhoneForWhatsAppCheck,
   pollCreationMessageFromPayload,
   pollUpdateForAggregation,
 } from './bridge_helpers.js';
@@ -1111,6 +1112,21 @@ app.get('/chat/:id', async (req, res) => {
     isGroup,
     participants: [],
   });
+});
+
+// Read-only number existence check used by guarded outreach senders.
+app.get('/exists', async (req, res) => {
+  const phone = normalizePhoneForWhatsAppCheck(req.query.phone);
+  if (!phone) return res.status(400).json({ error: 'invalid_phone' });
+  if (!sock || connectionState !== 'connected') {
+    return res.status(503).json({ error: 'not_connected' });
+  }
+  try {
+    const result = await sock.onWhatsApp(`${phone}@s.whatsapp.net`);
+    return res.json({ exists: Boolean(result?.[0]?.exists) });
+  } catch {
+    return res.status(502).json({ error: 'lookup_failed' });
+  }
 });
 
 // Health check

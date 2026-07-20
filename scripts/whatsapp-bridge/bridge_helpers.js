@@ -586,3 +586,10 @@ export async function captureUntrustedDmEvent({
     mediaUrls: [],
   };
 }
+
+export function normalizePhoneForWhatsAppCheck(value) {
+  let digits = String(value || '').replace(/\D/g, '');
+  if (digits.length >= 10 && !digits.startsWith('55')) digits = `55${digits}`;
+  if (!/^55\d{10,11}$/.test(digits)) return null;
+  return digits;
+}

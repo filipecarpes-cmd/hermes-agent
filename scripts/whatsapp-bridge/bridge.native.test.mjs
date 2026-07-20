@@ -17,11 +17,31 @@ import {
   buildTextSendPayload,
   createBoundedMessageStore,
   appendMediaFailureNote,
+  captureUntrustedDmEvent,
   extractBridgeEvent,
   mediaPayloadForFile,
   pollCreationMessageFromPayload,
   pollUpdateForAggregation,
 } from './bridge_helpers.js';
+
+// -- capture-only external DM ---------------------------------------------
+{
+  const event = await captureUntrustedDmEvent({
+    msg: {
+      key: { id: 'external-1', remoteJid: '5511999999999@s.whatsapp.net', fromMe: false },
+      messageTimestamp: 123,
+      message: { conversation: 'Tenho interesse' },
+    },
+    chatId: '5511999999999@s.whatsapp.net',
+    senderId: '5511999999999@s.whatsapp.net',
+    senderNumber: '5511999999999',
+    botIds: ['5511997299781@s.whatsapp.net'],
+  });
+  assert.equal(event.event, 'captured_untrusted_dm');
+  assert.equal(event.captureOnly, true);
+  assert.equal(event.body, 'Tenho interesse');
+  assert.deepEqual(event.mediaUrls, []);
+}
 
 // -- quoted outbound text -------------------------------------------------
 {

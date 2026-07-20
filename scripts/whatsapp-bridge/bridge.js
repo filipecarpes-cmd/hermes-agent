@@ -41,6 +41,7 @@ import {
   buildLocationPayload,
   buildTextSendPayload,
   createBoundedMessageStore,
+  captureUntrustedDmEvent,
   extractBridgeEvent,
   inferMediaType,
   mediaPayloadForFile,
@@ -645,6 +646,30 @@ async function startSocket() {
           continue;
         }
         if (WHATSAPP_DM_POLICY !== 'pairing' && !matchesAllowedUser(senderId, ALLOWED_USERS, SESSION_DIR)) {
+          // Capture external DMs as local data for the Sawi response monitor.
+          // The event is deliberately NOT pushed to messageQueue, so an
+          // untrusted sender cannot issue commands or trigger the agent.
+          if (!isGroup) {
+            try {
+              const captured = await captureUntrustedDmEvent({
+                msg,
+                chatId,
+                senderId,
+                senderNumber,
+                botIds,
+              });
+              if (captured.body || captured.hasMedia) {
+                console.log(JSON.stringify(captured));
+              }
+            } catch (captureError) {
+              emitDebugEvent({
+                stage: 'capture_failed',
+                reason: captureError?.message || 'capture_error',
+                chatId: redactWhatsAppId(chatId),
+                senderId: redactWhatsAppId(senderId),
+              });
+            }
+          }
           try {
             console.log(JSON.stringify({
               event: 'ignored',

@@ -555,3 +555,34 @@ export function pollCreationMessageFromPayload(payload) {
   };
   return message;
 }
+
+/**
+ * Build a capture-only event for an external DM rejected by the bridge
+ * allowlist. The caller may persist it locally for response monitoring, but
+ * must never enqueue it to the Python gateway. Media is metadata-only: an
+ * untrusted sender cannot trigger downloads before owner review.
+ */
+export async function captureUntrustedDmEvent({
+  msg,
+  chatId,
+  senderId,
+  senderNumber,
+  botIds = [],
+}) {
+  const extracted = await extractBridgeEvent({
+    msg,
+    chatId,
+    senderId,
+    senderNumber,
+    botIds,
+    isGroup: false,
+    downloadMedia: null,
+    cacheDirs: {},
+  });
+  return {
+    ...extracted,
+    event: 'captured_untrusted_dm',
+    captureOnly: true,
+    mediaUrls: [],
+  };
+}
